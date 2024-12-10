@@ -10,7 +10,7 @@ export function Account() {
   return (
     <div className="flex items-center gap-1.5">
       <div>
-        <span className="font-mono font-bold text-white text-center">
+        <span className="font-mono font-bold text-center">
           {address}
         </span>
       </div>

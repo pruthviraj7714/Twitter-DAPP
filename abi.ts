@@ -1,5 +1,68 @@
 export const ABI = [
 	{
+		"inputs": [
+			{
+				"internalType": "uint16",
+				"name": "newLenght",
+				"type": "uint16"
+			}
+		],
+		"name": "changeTweetLength",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_tweet",
+				"type": "string"
+			}
+		],
+		"name": "createTweet",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_author",
+				"type": "address"
+			}
+		],
+		"name": "getTotalLikes",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "author",
+				"type": "address"
+			}
+		],
+		"name": "likeTweet",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
@@ -98,40 +161,19 @@ export const ABI = [
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "MAX_TWEET_LENGTH",
-		"outputs": [
-			{
-				"internalType": "uint16",
-				"name": "",
-				"type": "uint16"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
-				"internalType": "uint16",
-				"name": "newLenght",
-				"type": "uint16"
-			}
-		],
-		"name": "changeTweetLength",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
+				"internalType": "address",
+				"name": "author",
+				"type": "address"
+			},
 			{
-				"internalType": "string",
-				"name": "_tweet",
-				"type": "string"
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
 			}
 		],
-		"name": "createTweet",
+		"name": "unlikeTweet",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -186,25 +228,6 @@ export const ABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_author",
-				"type": "address"
-			}
-		],
-		"name": "getTotalLikes",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
 				"name": "_owner",
 				"type": "address"
 			},
@@ -253,21 +276,16 @@ export const ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "MAX_TWEET_LENGTH",
+		"outputs": [
 			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "author",
-				"type": "address"
+				"internalType": "uint16",
+				"name": "",
+				"type": "uint16"
 			}
 		],
-		"name": "likeTweet",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -312,24 +330,6 @@ export const ABI = [
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "author",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			}
-		],
-		"name": "unlikeTweet",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

@@ -1,29 +1,44 @@
-interface TweetProps {
-  author: string;
-  content: string;
-  timestamp: number;
-  id: number;
-  likes: number;
+import { TweetProps } from "@/types/types";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
+
+interface TweetCardProps {
+  tweet: TweetProps;
+  onLike: () => void;
+  onUnlike: () => void;
 }
 
-const TwitteCard = ({ tweet }: { tweet: TweetProps }) => {
+export default function TweetCard({ tweet, onLike, onUnlike }: TweetCardProps) {
   return (
-    <div className="max-w-4xl w-full flex flex-col">
-      <div className="flex items-center gap-1.5">
-        <div className="h-10 w-10">
-          <img
-            src="https://styles.redditmedia.com/t5_2orvzk/styles/profileIcon_l9jcdipewjs71.jpg?width=256&height=256&frame=1&auto=webp&crop=256:256,smart&s=743b7aa9744f46e7cf64e0e9f2f5517226d8e41b"
-            alt=""
-            className="w-full h-full rounded-full object-cover"
-          />
-        </div>
-        <div className="flex flex-col">
-          <div>{tweet.author}</div>
-          <div>{tweet.content}</div>
-        </div>
-      </div>
-    </div>
+    <Card className="mb-4">
+      <CardContent className="pt-4">
+        <p className="text-sm text-gray-500 mb-2">
+          Tweet ID: {tweet.id.toString()}
+        </p>
+        <p>{tweet.content}</p>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onLike}
+          className="flex items-center"
+        >
+          <ThumbsUp className="mr-2 h-4 w-4" />
+          Like ({tweet.likes.toString()})
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onUnlike}
+          className="flex items-center"
+        >
+          <ThumbsDown className="mr-2 h-4 w-4" />
+          Unlike
+        </Button>
+      </CardFooter>
+    </Card>
   );
-};
+}
 
-export default TwitteCard;

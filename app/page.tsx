@@ -1,123 +1,183 @@
 "use client";
 
 import { useAccount, useWriteContract } from "wagmi";
-import { Loader2 } from "lucide-react";
+import { Loader2, Send } from 'lucide-react';
 import { WalletOptions } from "./Components/WalletOptions";
 import { Account } from "./Components/Account";
 import { useEffect, useState } from "react";
 import { ABI } from "@/abi";
 import { toast } from "sonner";
-import TwitteCard from "./Components/TwitteCard";
-import { config } from "@/config";
 import { readContract } from "wagmi/actions";
+import { config } from "@/config";
+import { TweetProps } from "@/types/types";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TweetCard from "./Components/TwitteCard";
 
-const CONTRACT_ADDRESS =  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
 
 export default function Home() {
   const { isConnected, address } = useAccount();
   const [showWalletOptions, setShowWalletOptions] = useState(false);
-  const [twittes, setTwittes] = useState<any[]>([]);
-  const [twitteContent, setTwitteContent] = useState("");
-  const { data: hash, isPending, isSuccess, writeContract } = useWriteContract();
+  const [tweets, setTweets] = useState<TweetProps[]>([]);
+  const [tweetContent, setTweetContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { isPending, writeContract } = useWriteContract();
 
-  function handleConnectWallet() {
-    setShowWalletOptions(true);
-  }
+  const handleConnectWallet = () => setShowWalletOptions(true);
 
-  const createTweet = () => {
+  const createTweet = async () => {
+    if (!tweetContent.trim()) {
+      toast.error("Tweet content cannot be empty");
+      return;
+    }
     try {
-       writeContract({
+      await writeContract({
         abi: ABI,
         address: CONTRACT_ADDRESS,
         functionName: "createTweet",
-        args: [twitteContent],
-        account: address,
+        args: [tweetContent],
       });
-      if(isSuccess) {
-        toast.success("Tweet successfully Posted!")
-      }
+      setTweetContent("");
+      toast.success("Tweet created successfully!");
+      await fetchTweets();
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to create tweet");
     }
   };
 
-  const likeTweet = () => {};
+  const likeTweet = async (id: number) => {
+    try {
+      await writeContract({
+        abi: ABI,
+        address: CONTRACT_ADDRESS,
+        functionName: "likeTweet",
+        args: [id, address],
+      });
+      toast.success("Tweet liked successfully");
+      await fetchTweets();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to like tweet");
+    }
+  };
+
+  const unlikeTweet = async (id: number) => {
+    try {
+      await writeContract({
+        abi: ABI,
+        address: CONTRACT_ADDRESS,
+        functionName: "unlikeTweet",
+        args: [address, id],
+      });
+      toast.success("Tweet unliked successfully");
+      await fetchTweets();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to unlike tweet");
+    }
+  };
 
   const fetchTweets = async () => {
+    if (!address) return;
+    setIsLoading(true);
     try {
-      const tweets = await readContract(config,{
-        abi : ABI,
-        address : CONTRACT_ADDRESS,
-        functionName : "getAllTweets",
-        args : [address],
-      })
-      console.log(tweets);
-    } catch (error : any) {
-      console.log(error);
-      toast.error(error.message);
+      const fetchedTweets = await readContract(config, {
+        abi: ABI,
+        address: CONTRACT_ADDRESS,
+        functionName: "getAllTweets",
+        args: [address as `0x${string}`],
+        account: address,
+      });
+      setTweets(fetchedTweets as unknown as TweetProps[]);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to fetch tweets");
+    } finally {
+      setIsLoading(false);
     }
-
   };
 
   useEffect(() => {
-    if(address) {
-      console.log(address);
+    if (address) {
       fetchTweets();
     }
   }, [address]);
 
   return (
-    <main className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-      <section className="p-8 border border-gray-300 dark:border-gray-700 rounded-xl flex flex-col items-center shadow-lg min-h-[50vw] mt-5 max-w-4xl w-full bg-white dark:bg-gray-800">
-        <div className="mb-5">
-          {isConnected ? (
-            <Account />
-          ) : showWalletOptions ? (
-            <WalletOptions />
-          ) : (
-            <button
-              onClick={handleConnectWallet}
-              className="bg-gradient-to-r from-sky-400 to-blue-500 hover:from-blue-500 hover:to-sky-400 text-white rounded-full px-6 py-2 font-semibold shadow-md hover:shadow-lg transition-all"
-            >
-              Connect Wallet
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col w-full my-5">
-          <h1 className="text-2xl font-extrabold text-center text-gray-800 dark:text-gray-200 mb-4">
-            Add Tweet 🤩
-          </h1>
-          <textarea
-            onChange={(e) => setTwitteContent(e.target.value)}
-            placeholder="What's happening?"
-            className="w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-sky-400 focus:outline-none transition-all"
-            rows={4}
-          />
-          <button
-            onClick={createTweet}
-            disabled={isPending}
-            className="self-end mt-4 bg-sky-400 hover:bg-sky-500 text-white px-6 py-2 rounded-lg font-semibold shadow-md transition-all"
-          >
-            {isPending ? (
-              <div>
-                <Loader2 className="animate-spin" />
-              </div>
+    <main className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 p-4">
+      <Card className="w-full max-w-4xl">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-center">Decentralized Twitter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-6 flex justify-center">
+            {isConnected ? (
+              <Account />
+            ) : showWalletOptions ? (
+              <WalletOptions />
             ) : (
-              <span className="">Post</span>
+              <Button onClick={handleConnectWallet} size="lg">
+                Connect Wallet
+              </Button>
             )}
-          </button>
-        </div>
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-extrabold text-center text-gray-800 dark:text-gray-200 mb-4">
-            Your Tweet 🤩
-          </h1>
-          {twittes && twittes.length > 0 ? (
-            twittes.map((tweet) => <TwitteCard tweet={tweet} key={tweet.id} />)
-          ) : (
-            <div>No Tweets are Posted by You Yet! ✉</div>
+          </div>
+
+          {isConnected && (
+            <>
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="text-xl">Create a Tweet</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={tweetContent}
+                    onChange={(e) => setTweetContent(e.target.value)}
+                    placeholder="What's happening?"
+                    className="mb-4"
+                    rows={4}
+                  />
+                  <Button
+                    onClick={createTweet}
+                    disabled={isPending || !tweetContent.trim()}
+                    className="w-full"
+                  >
+                    {isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-2 h-4 w-4" />
+                    )}
+                    Post Tweet
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl">Your Tweets</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-24">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : tweets.length > 0 ? (
+                    tweets.map((tweet: TweetProps) => (
+                      <TweetCard
+                        key={tweet.id}
+                        tweet={tweet}
+                        onLike={() => likeTweet(tweet.id)}
+                        onUnlike={() => unlikeTweet(tweet.id)}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-center text-gray-500">No tweets yet. Be the first to post!</p>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     </main>
   );
 }
+

@@ -1,4 +1,5 @@
 "use client";
+import { shortenAddress } from "@/lib/utils";
 import { useAccount, useDisconnect } from "wagmi";
 
 export function Account() {
@@ -10,8 +11,8 @@ export function Account() {
   return (
     <div className="flex items-center gap-1.5">
       <div>
-        <span className="font-mono font-bold text-center">
-          {address}
+        <span className="font-mono font-bold text-center text-white">
+          {shortenAddress(address)}
         </span>
       </div>
       <button

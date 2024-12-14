@@ -1,8 +1,7 @@
 "use client";
 
-import { useAccount, useWriteContract } from "wagmi";
-import { Loader2, Send } from 'lucide-react';
-import { WalletOptions } from "./Components/WalletOptions";
+import { useAccount, useConnect, useWriteContract } from "wagmi";
+import { Heart, Loader2, Send } from "lucide-react";
 import { Account } from "./Components/Account";
 import { useEffect, useState } from "react";
 import { ABI } from "@/abi";
@@ -15,15 +14,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TweetCard from "./Components/TwitteCard";
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+const CONTRACT_ADDRESS = process.env
+  .NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
 
 export default function Home() {
   const { isConnected, address } = useAccount();
   const [showWalletOptions, setShowWalletOptions] = useState(false);
   const [tweets, setTweets] = useState<TweetProps[]>([]);
   const [tweetContent, setTweetContent] = useState("");
+  const [totalLikes, setTotalLikes] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const { isPending, writeContract } = useWriteContract();
+  const { connectors, connect } = useConnect();
 
   const handleConnectWallet = () => setShowWalletOptions(true);
 
@@ -33,7 +35,7 @@ export default function Home() {
       return;
     }
     try {
-      await writeContract({
+       writeContract({
         abi: ABI,
         address: CONTRACT_ADDRESS,
         functionName: "createTweet",
@@ -49,7 +51,7 @@ export default function Home() {
 
   const likeTweet = async (id: number) => {
     try {
-      await writeContract({
+      writeContract({
         abi: ABI,
         address: CONTRACT_ADDRESS,
         functionName: "likeTweet",
@@ -63,17 +65,44 @@ export default function Home() {
   };
 
   const unlikeTweet = async (id: number) => {
+    const tweetIndex = tweets.findIndex((t) => t.id === id);
+    if (tweetIndex === -1) {
+      toast.error("Tweet not found!");
+      return;
+    } else {
+      if (tweets[tweetIndex].likes <= 0) {
+        toast.error("Unable to unlike this tweet", {
+          description: "This tweet has no likes to remove.",
+        });
+        return;
+      }
+    }
     try {
-      await writeContract({
+      writeContract({
         abi: ABI,
         address: CONTRACT_ADDRESS,
         functionName: "unlikeTweet",
         args: [address, id],
       });
-      toast.success("Tweet unliked successfully");
-      await fetchTweets();
     } catch (error: any) {
       toast.error(error.message || "Failed to unlike tweet");
+    }
+  };
+
+  const fetchTotalLikes = async () => {
+    try {
+      const totalLikes = await readContract(config, {
+        abi: ABI,
+        functionName: "getTotalLikes",
+        address: CONTRACT_ADDRESS,
+        args: [address],
+        account: address,
+      });
+      setTotalLikes(totalLikes as unknown as number);
+    } catch (error : any) {
+      toast.error("Error while fetching tweets", {
+        description : error.message
+      })
     }
   };
 
@@ -99,23 +128,40 @@ export default function Home() {
   useEffect(() => {
     if (address) {
       fetchTweets();
+      fetchTotalLikes();
     }
   }, [address]);
 
   return (
-    <main className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 p-4">
-      <Card className="w-full max-w-4xl">
+    <main className="flex justify-center items-center min-h-screen bg-black p-4">
+      <Card className="w-full max-w-4xl bg-black">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">Decentralized Twitter</CardTitle>
+          <CardTitle className="text-3xl font-bold text-center text-white">
+            Decentralized Twitter
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="mb-6 flex justify-center">
             {isConnected ? (
               <Account />
             ) : showWalletOptions ? (
-              <WalletOptions />
+              connectors
+                .filter((connector) => connector.name === "MetaMask")
+                .map((connector) => (
+                  <Button
+                    key={connector.id}
+                    onClick={() => connect({ connector })}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    MetaMask
+                  </Button>
+                ))
             ) : (
-              <Button onClick={handleConnectWallet} size="lg">
+              <Button
+                onClick={handleConnectWallet}
+                className="bg-sky-500 hover:bg-sky-600"
+                size="lg"
+              >
                 Connect Wallet
               </Button>
             )}
@@ -123,22 +169,24 @@ export default function Home() {
 
           {isConnected && (
             <>
-              <Card className="mb-6">
+              <Card className="mb-6 bg-black !border-none">
                 <CardHeader>
-                  <CardTitle className="text-xl">Create a Tweet</CardTitle>
+                  <CardTitle className="text-xl text-white ">
+                    Create a Tweet
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea
                     value={tweetContent}
                     onChange={(e) => setTweetContent(e.target.value)}
                     placeholder="What's happening?"
-                    className="mb-4"
+                    className="mb-4 bg-black placeholder:text-white/55 text-white"
                     rows={4}
                   />
                   <Button
                     onClick={createTweet}
                     disabled={isPending || !tweetContent.trim()}
-                    className="w-full"
+                    className="w-full !bg-sky-500 hover:!bg-sky-600"
                   >
                     {isPending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -150,14 +198,22 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-black !border-none">
                 <CardHeader>
-                  <CardTitle className="text-xl">Your Tweets</CardTitle>
+                  <CardTitle className="text-xl text-white">
+                    Your Tweets
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex items-center gap-1.5 mb-5">
+                    <Heart className="size-5 text-sky-500 fill-sky-500" />{" "}
+                    <span className="font-bold text-white">
+                      Total Likes : {totalLikes}
+                    </span>{" "}
+                  </div>
                   {isLoading ? (
                     <div className="flex justify-center items-center h-24">
-                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <Loader2 className="animate-spin size-10 text-sky-500" />
                     </div>
                   ) : tweets.length > 0 ? (
                     tweets.map((tweet: TweetProps) => (
@@ -169,7 +225,9 @@ export default function Home() {
                       />
                     ))
                   ) : (
-                    <p className="text-center text-gray-500">No tweets yet. Be the first to post!</p>
+                    <p className="text-center text-gray-500">
+                      No tweets yet. Be the first to post!
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -180,4 +238,3 @@ export default function Home() {
     </main>
   );
 }
-
